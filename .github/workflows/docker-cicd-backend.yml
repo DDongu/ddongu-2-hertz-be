@@ -17,6 +17,7 @@ on:
         default: "None"
         type: choice
         options:
+          - None
           - local
           - dev
 
@@ -304,9 +305,9 @@ jobs:
           fi
 
           aws ssm put-parameter \
-            --name "/global/springboot/dev/REDIRECT_URL" \
+            --name "${{ secrets.SSM_PATH_REDIRECT_URL }}" \
             --value "$REDIRECT_URL" \
-            --type "String" \
+            --type "SecureString" \
             --overwrite
 
   #     - name: Check if backend_tg exists and fallback to full apply
