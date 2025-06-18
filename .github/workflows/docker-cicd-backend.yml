@@ -295,9 +295,9 @@ jobs:
         if: env.ENV == 'DEV'
         run: |
           if [[ "${{ github.event.inputs.redirect_url }}" == "local" ]]; then
-            echo "REDIRECT_URL=${{ secrets.REDIRECT_URL_LOCAL }}"
+            "REDIRECT_URL=${{ secrets.REDIRECT_URL_LOCAL }}"
           elif [[ "${{ github.event.inputs.redirect_url }}" == "dev" ]]; then
-            echo "REDIRECT_URL=${{ secrets.REDIRECT_URL_DEV }}"
+            "REDIRECT_URL=${{ secrets.REDIRECT_URL_DEV }}"
           else
             echo "[ERROR] Redirect URL을 선택해주세요."
             exit 1
