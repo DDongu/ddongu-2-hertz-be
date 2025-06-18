@@ -1,20 +1,20 @@
 package com.hertz.hertz_be.domain.auth.controller;
 
-import com.hertz.hertz_be.domain.auth.dto.request.OAuthLoginRequestDTO;
-import com.hertz.hertz_be.domain.auth.dto.response.OAuthLoginResponseDTO;
+import com.hertz.hertz_be.domain.auth.dto.request.OAuthLoginRequestDto;
+import com.hertz.hertz_be.domain.auth.dto.response.OAuthLoginResponseDto;
 import com.hertz.hertz_be.domain.auth.dto.response.OAuthLoginResult;
-import com.hertz.hertz_be.domain.auth.dto.response.OAuthSignupResponseDTO;
+import com.hertz.hertz_be.domain.auth.dto.response.OAuthSignupResponseDto;
 import com.hertz.hertz_be.domain.auth.service.OAuthService;
 import com.hertz.hertz_be.domain.channel.service.ChannelService;
 import com.hertz.hertz_be.global.common.ResponseCode;
 import com.hertz.hertz_be.global.common.ResponseDto;
+import com.hertz.hertz_be.global.util.AuthUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,36 +46,26 @@ public class OAuthController {
     @Operation(summary = "소셜 로그인 API")
     public ResponseEntity<?> oauthLogin(
             @PathVariable String provider,
-            @RequestBody OAuthLoginRequestDTO request,
+            @RequestBody OAuthLoginRequestDto request,
             HttpServletResponse response
     ) {
         OAuthLoginResult result = oAuthService.oauthLogin(provider, request);
 
-        if (result.isRegistered()) {
-            String newRefreshToken = result.getRefreshToken();
+        if (result.registered()) {
+            String newRefreshToken = result.refreshToken();
 
-            //ResponseCookie 설정 (환경에 따라 분기)
-            ResponseCookie responseCookie = ResponseCookie.from("refreshToken", newRefreshToken)
-                    .maxAge(maxAgeSeconds)
-                    .path("/")
-                    .sameSite("None")
-                    .domain(isLocal ? ".hertz-tuning.com" : null)  // isLocal일 경우 domain 생략
-                    .httpOnly(true)
-                    .secure(!isLocal)                               // isLocal=false면 secure 활성화
-                    .build();
+            AuthUtil.setRefreshTokenCookie(response, newRefreshToken, maxAgeSeconds, isLocal);
 
-            response.setHeader("Set-Cookie", responseCookie.toString());
+            OAuthLoginResponseDto dto = new OAuthLoginResponseDto(result.userId(), result.accessToken());
 
-            OAuthLoginResponseDTO dto = new OAuthLoginResponseDTO(result.getUserId(), result.getAccessToken());
-
-            boolean hasSelectedInterests = channelService.hasSelectedInterests(channelService.getUserById(result.getUserId()));
+            boolean hasSelectedInterests = channelService.hasSelectedInterests(channelService.getUserById(result.userId()));
             if (!hasSelectedInterests) {
                 return ResponseEntity.ok(new ResponseDto<>(ResponseCode.USER_INTERESTS_NOT_SELECTED, "사용자가 아직 취향 선택을 완료하지 않았습니다.", dto));
             }
             return ResponseEntity.ok(new ResponseDto<>(ResponseCode.USER_ALREADY_REGISTERED, "로그인에 성공했습니다.", dto));
 
         } else {
-            OAuthSignupResponseDTO dto = new OAuthSignupResponseDTO(result.getProviderId());
+            OAuthSignupResponseDto dto = new OAuthSignupResponseDto(result.providerId());
             return ResponseEntity.ok(new ResponseDto<>(ResponseCode.USER_NOT_REGISTERED, "신규 회원입니다.", dto));
         }
     }

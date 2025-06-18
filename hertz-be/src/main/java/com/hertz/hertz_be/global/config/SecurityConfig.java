@@ -1,6 +1,7 @@
 package com.hertz.hertz_be.global.config;
 
 import com.hertz.hertz_be.global.auth.filter.JwtAuthenticationFilter;
+import com.hertz.hertz_be.global.auth.filter.SseAuthenticationFilter;
 import com.hertz.hertz_be.global.auth.handler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final SseAuthenticationFilter sseAuthenticationFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
@@ -38,6 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
+                                "/api/sse/subscribe",
                                 "/api/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -46,10 +49,10 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        .requestMatchers("/sse/subscribe").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(sseAuthenticationFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 
@@ -60,7 +63,9 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "https://hertz-tuning.com",
                 "https://dev.hertz-tuning.com",
-                "https://local.hertz-tuning.com:3000"
+                "https://local.hertz-tuning.com:3000",
+                "https://app.hertz-tuning.com",
+                "https://app-prod.hertz-tuning.com"
         ));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
@@ -68,7 +73,6 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
-
         return source;
     }
 }

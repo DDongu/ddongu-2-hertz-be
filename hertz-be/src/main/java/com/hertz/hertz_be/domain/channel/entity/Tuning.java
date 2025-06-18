@@ -1,6 +1,5 @@
 package com.hertz.hertz_be.domain.channel.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hertz.hertz_be.domain.channel.entity.enums.Category;
 import com.hertz.hertz_be.domain.user.entity.User;
 import jakarta.persistence.Entity;
